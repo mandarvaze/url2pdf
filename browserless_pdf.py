@@ -1,19 +1,49 @@
 import argparse
+import asyncio
 import time
-import requests
+from pyppeteer import connect
 browserless_endpoint = 'https://chrome.browserless.io/pdf'
 
 
-def create_pdf(url, path):
-    headers = {
-        'Cache-Control': 'no-cache',
-        'Content-Type': 'application/json',
-    }
-    data = {'url': url}
+async def create_pdf(url, path):
     start = time.process_time()
-    response = requests.post(browserless_endpoint, headers=headers, json=data)
-    open(path, 'wb').write(response.content)
-    print(f"browerless: Took {time.process_time()-start} seconds")
+    pdfHeightMargin = 150
+    browser = await connect(
+        {'browserWSEndpoint': 'wss://chrome.browserless.io/'})
+    page = await browser.newPage()
+    await page.setViewport({'width': 412,
+                            'height': 800,
+                            'deviceScaleFactor': 1})
+    await page.goto(url)
+    await page.emulateMedia('screen')
+    await page.addStyleTag({
+        'content': """
+        html {
+            -webkit - print-color - adjust: exact !important
+            color - adjust: exact !important
+            print-color - adjust: exact !important
+        }
+        * {
+            box - shadow: none !important
+        }
+       """
+    })
+    height = await page.evaluate('() => document.documentElement.offsetHeight')
+    await page.pdf(
+        {'path': path,
+         'scale': 1,
+         'margin': {
+             'top': '20px',
+             'bottom': '20px'
+         },
+         'preferCSSPageSize': True,
+         'fullPage': True,
+         'omitBackground': True,
+         'height': f"{height + pdfHeightMargin}px",
+         'printBackground': True
+         })
+    await browser.close()
+    print(f"browserless: Took {time.process_time()-start} seconds")
 
 
 if __name__ == '__main__':
@@ -21,4 +51,4 @@ if __name__ == '__main__':
     parser.add_argument("-u", "--url", help="URL to convert", type=str)
     parser.add_argument("-o", "--out", help="Path to PDF output", type=str)
     args = parser.parse_args()
-    create_pdf(args.url, args.out)
+    asyncio.get_event_loop().run_until_complete(create_pdf(args.url, args.out))
