@@ -14,7 +14,7 @@ async def create_pdf(url, path):
     await page.setViewport({'width': 412,
                             'height': 800,
                             'deviceScaleFactor': 1})
-    await page.goto(url)
+    await page.goto(url, {'waitUntil': 'load'})
     await page.emulateMedia('screen')
     await page.addStyleTag({
         'content': """
@@ -28,6 +28,7 @@ async def create_pdf(url, path):
         }
        """
     })
+    await page.waitFor(2000)
     height = await page.evaluate('() => document.documentElement.offsetHeight')
     await page.pdf(
         {'path': path,
