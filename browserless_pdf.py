@@ -19,16 +19,16 @@ async def create_pdf(url, path):
     await page.addStyleTag({
         'content': """
         html {
-            -webkit - print-color - adjust: exact !important
-            color - adjust: exact !important
-            print-color - adjust: exact !important
+            -webkit-print-color-adjust: exact !important
+            color-adjust: exact !important
+            print-color-adjust: exact !important
         }
         * {
-            box - shadow: none !important
+            box-shadow: none !important
         }
        """
     })
-    await page.waitFor(2000)
+    # await page.waitFor(2000) # Not sure if this is needed
     height = await page.evaluate('() => document.documentElement.offsetHeight')
     await page.pdf(
         {'path': path,
